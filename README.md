@@ -7,7 +7,7 @@ Install and build **DynamoRIO**.
 ## Compilation
 
 1. Replace `/path/to/dynamorio/build/include` and `/path/to/dynamorio/build/lib64` in the Makefile with actual paths to the directory containing the header files and the directory containing the necessary compiled library files respectively (use `lib32` for a 32-bit machine).
-2. Modify the target OS or the target architecture in the Makefile (specified as -DLINUX -DX86_64) if required.
+2. Modify the target OS or the target architecture in the Makefile (specified as `-DLINUX` `-DX86_64`) if required.
 3. Run `make`.
 
 ## Execution
