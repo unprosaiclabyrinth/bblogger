@@ -4,8 +4,10 @@
 
 static file_t log_file;
 static void event_exit(void);
-static dr_emit_flags_t event_basic_block(void *drcontext, void *tag, instrlist_t *bb,
-                                         bool for_trace, bool translating);
+
+// callback function prototype for the basic block event
+static dr_emit_flags_t log_basic_block(void *drcontext, void *tag, instrlist_t *bb,
+                                       bool for_trace, bool translating);
 
 DR_EXPORT void dr_init(__attribute__((unused)) client_id_t id) {
     dr_set_client_name("DynamoRIO Basic Block Logger", "https://dynamorio.org");
@@ -14,19 +16,19 @@ DR_EXPORT void dr_init(__attribute__((unused)) client_id_t id) {
     DR_ASSERT(log_file != INVALID_FILE);
 
     dr_register_exit_event(event_exit);
-    dr_register_bb_event(event_basic_block);
+    dr_register_bb_event(log_basic_block);
 }
 
 static void event_exit(void) {
     dr_close_file(log_file);
 }
 
-static dr_emit_flags_t event_basic_block(__attribute__((unused)) void *drcontext, void *tag,
-                                         __attribute__((unused)) instrlist_t *bb,
-                                         __attribute__((unused)) bool for_trace,
-                                         __attribute__((unused)) bool translating) {
-    char tag_str[20];
-    snprintf(tag_str, sizeof(tag_str), "%p\n", tag);
-    dr_write_file(log_file, tag_str, strlen(tag_str));
+static dr_emit_flags_t log_basic_block(__attribute__((unused)) void *drcontext, void *tag,
+                                       __attribute__((unused)) instrlist_t *bb,
+                                       __attribute__((unused)) bool for_trace,
+                                       __attribute__((unused)) bool translating) {
+    char addr_str[64];
+    snprintf(addr_str, sizeof(addr_str), "%p -> %p\n", tag, dr_fragment_app_pc(tag));
+    dr_write_file(log_file, addr_str, strlen(addr_str));
     return DR_EMIT_DEFAULT;
 }
