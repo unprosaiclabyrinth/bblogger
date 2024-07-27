@@ -28,7 +28,7 @@ static dr_emit_flags_t log_basic_block(__attribute__((unused)) void *drcontext, 
                                        __attribute__((unused)) bool for_trace,
                                        __attribute__((unused)) bool translating) {
     char addr_str[64];
-    snprintf(addr_str, sizeof(addr_str), "%p -> %p\n", tag, dr_fragment_app_pc(tag));
+    snprintf(addr_str, sizeof(addr_str), "%p\n", dr_fragment_app_pc(tag));
     dr_write_file(log_file, addr_str, strlen(addr_str));
     return DR_EMIT_DEFAULT;
 }
