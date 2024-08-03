@@ -10,7 +10,9 @@ static void event_exit(void);
 dr_emit_flags_t event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                                       bool for_trace, bool translating);
 
-DR_EXPORT void dr_client_main(__attribute__((unused)) client_id_t id) {
+void dr_client_main(__attribute__((unused)) client_id_t id,
+                    __attribute__((unused)) int argc,
+                    __attribute__((unused)) const char *argv[]) {
     dr_set_client_name("DrBblogger", "https://dynamorio.org");
 
     log_file = dr_open_file("bbtrace.log", DR_FILE_WRITE_OVERWRITE | DR_FILE_ALLOW_LARGE);
@@ -18,10 +20,6 @@ DR_EXPORT void dr_client_main(__attribute__((unused)) client_id_t id) {
 
     dr_register_exit_event(event_exit);
     dr_register_bb_event(event_app_instruction);
-}
-
-static void event_exit(void) {
-    dr_close_file(log_file);
 }
 
 dr_emit_flags_t event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
@@ -33,10 +31,14 @@ dr_emit_flags_t event_app_instruction(__attribute__((unused)) void *drcontext, v
     char addr_str[64];
     if (mod != NULL) {
         ptr_int_t rel_addr = start_pc - mod->start ;
-        dr_snprintf(addr_str, sizeof(addr_str), "%s: %#lx\n", dr_module_preferred_name(mod), rel_addr);
+        dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", dr_module_preferred_name(mod), rel_addr);
         dr_write_file(log_file, addr_str, strlen(addr_str));
 
     }
     dr_free_module_data(mod);
     return DR_EMIT_DEFAULT;
+}
+
+static void event_exit(void) {
+    dr_close_file(log_file);
 }
