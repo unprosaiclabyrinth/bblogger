@@ -31,9 +31,9 @@ event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
     app_pc start_pc = dr_fragment_app_pc(tag);
     module_data_t *mod = dr_lookup_module(start_pc);
     char addr_str[64];
-    if (mod != NULL) {
+    if (mod != NULL && mod->names.module_name == NULL) {
         ptr_int_t rel_addr = start_pc - mod->start ;
-        dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", dr_module_preferred_name(mod), rel_addr);
+        dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", rel_addr);
         dr_write_file(log_file, addr_str, strlen(addr_str));
 
     }
