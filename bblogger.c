@@ -32,10 +32,15 @@ event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
     module_data_t *mod = dr_lookup_module(start_pc);
     char addr_str[64];
     if (mod != NULL && mod->names.module_name == NULL) {
-        ptr_int_t rel_addr = start_pc - mod->start ;
-        dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", rel_addr);
-        dr_write_file(log_file, addr_str, strlen(addr_str));
+        ptr_int_t rel_addr = start_pc - mod->start;
 
+        #ifdef VERBOSE
+            dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", mod->names.module_name, rel_addr);
+        #else
+            dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", rel_addr);
+        #endif
+
+        dr_write_file(log_file, addr_str, strlen(addr_str));
     }
     dr_free_module_data(mod);
     return DR_EMIT_DEFAULT;
