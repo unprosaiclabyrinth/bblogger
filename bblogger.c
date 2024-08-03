@@ -4,7 +4,6 @@
 
 static file_t log_file;
 static void event_exit(void);
-    unsigned long code_vma_start_addr = 0;
 
 // callback function prototype for the basic block event
 static dr_emit_flags_t
