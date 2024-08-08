@@ -31,17 +31,19 @@ event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
     app_pc start_pc = dr_fragment_app_pc(tag);
     module_data_t *mod = dr_lookup_module(start_pc);
     char addr_str[64];
+    memset(addr_str, 0, 64); // ensure clean buffer
+
     if (mod != NULL) {
         ptr_int_t rel_addr = start_pc - mod->start;
-        int fromBinary = 0;
+        int from_binary = 0;
 
         #ifdef FULL
-            fromBinary = 1;
+            from_binary = 1;
         #else
-            fromBinary = mod->names.module_name == NULL;
+            from_binary = mod->names.module_name == NULL;
         #endif
 
-        if (fromBinary) {
+        if (from_binary) {
             #ifdef VERBOSE
                 dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", mod->names.file_name, rel_addr);
             #else
