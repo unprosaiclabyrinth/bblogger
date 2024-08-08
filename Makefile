@@ -1,12 +1,43 @@
-CC     = gcc
+# Configurable variables (can be overridden from the command line or in config.mk)
+# DRIO_INC: Directory for DRIO include files (default: ../drio-10/include)
+# DRIO_LIB: Directory for DRIO library files (default: ../drio-10/lib64)
+# CC: The C compiler to use (default: gcc)
+# ALL: Set to enable additional compilation flags (-DVERBOSE -DFULL)
+
+DRIO_INC ?= ../drio-10/include	# Change it
+DRIO_LIB ?= ../drio-10/lib64	# Change it
+
+CC     ?= gcc
 CFLAGS = -Wall -Wextra -shared -fPIC
+ifdef ALL
+    CFLAGS += -DVERBOSE -DFULL
+endif
 
 all: bblogger.so
 
 bblogger.so: bblogger.c clean
-	$(CC) $(CFLAGS) -o $@ $< -I/users/hdongr2/dynamorio/build/include -L/users/hdongr2/dynamorio/build/lib64 -DLINUX -DX86_64 -DVERBOSE
+	$(CC) $(CFLAGS) -o $@ $< \
+		-I $(DRIO_INC) \
+		-L $(DRIO_LIB) -DLINUX -DX86_64
 
 clean:
 	@rm -f bblogger.so
 
-.PHONY: clean
+# Help target to explain usage
+help:
+	@echo "Makefile for building bblogger.so"
+	@echo "Usage:"
+	@echo "  make [target] [VARIABLE=value]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all       Build the shared object"
+	@echo "  clean     Remove built files"
+	@echo "  help      Display this help message"
+	@echo ""
+	@echo "Configurable variables:"
+	@echo "  DRIO_INC  Directory for DRIO include files (default: ../drio-10/include)"
+	@echo "  DRIO_LIB  Directory for DRIO library files (default: ../drio-10/lib64)"
+	@echo "  CC        C compiler (default: gcc)"
+	@echo "  ALL       Set to enable additional compilation flags (-DVERBOSE -DFULL)"
+
+.PHONY: all clean help
