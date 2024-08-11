@@ -7,7 +7,7 @@
 DRIO_INC ?= ../drio-10/include	# Change it
 DRIO_LIB ?= ../drio-10/lib64	# Change it
 
-CC     ?= gcc
+CC     = gcc
 CFLAGS = -Wall -Wextra -shared -fPIC
 ifdef ALL
     CFLAGS += -DVERBOSE -DFULL
