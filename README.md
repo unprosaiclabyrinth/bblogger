@@ -31,3 +31,10 @@ $ ../drio-11/bin64/drrun -c ./bblogger.so -- ls
 ```
 
 The script writes a `bbtrace.log` file that contains the basic block trace.
+
+## Train the basic block traces using LSTM model
+Store all your trace logs to a directory `./traces/` with `.txt` as the extension.
+```
+pip3 install numpy tensorflow scikit-learn
+python3 ./LSTM_train_predict.py
+```
