@@ -37,7 +37,7 @@ event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
         ptr_int_t rel_addr = start_pc - mod->start;
         int from_binary = 0;
 
-        #ifdef FULL
+        #ifdef ALL
             from_binary = 1;
         #else
             from_binary = mod->names.module_name == NULL;
