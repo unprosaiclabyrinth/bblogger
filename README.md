@@ -23,14 +23,6 @@ git clone https://github.com/unprosaiclabyrinth/bblogger
 
 ## Execution
 
-Get started (change `/path/to/dynamorio/build` with the actual path):
-```sh
-export DYNAMORIO_HOME=/path/to/dynamorio/build
-export PATH=$DYNAMORIO_HOME/bin64:$PATH
-export LD_LIBRARY_PATH=$DYNAMORIO_HOME/lib64:$LD_LIBRARY_PATH
-drrun -root /path/to/dynamorio/build -c bblogger.so -- ./application
-```
-
 An example to run this tool:
 ```
 $ ls ..
