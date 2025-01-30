@@ -6,9 +6,9 @@ Install [`DynamoRIO`](https://dynamorio.org/), `gcc` and clone the `bblogger` so
 
 ```
 sudo apt install -y gcc
-wget https://github.com/DynamoRIO/dynamorio/releases/download/release_10.0.0/DynamoRIO-Linux-10.0.0.tar.gz
-tar xvf DynamoRIO-Linux-10.0.0.tar.gz
-mv DynamoRIO-Linux-10.0.0 drio-10
+wget https://github.com/DynamoRIO/dynamorio/releases/download/release_11.3.0-1/DynamoRIO-Linux-11.3.0.tar.gz
+tar xvf DynamoRIO-Linux-11.3.0.tar.gz
+mv DynamoRIO-Linux-11.3.0-1 drio-11
 git clone https://github.com/unprosaiclabyrinth/bblogger
 ```
 
@@ -26,8 +26,8 @@ git clone https://github.com/unprosaiclabyrinth/bblogger
 An example to run this tool:
 ```
 $ ls ..
-bblogger  drio-10  ...
-$ ../drio-10/bin64/drrun -c ./bblogger.so -- ls
+bblogger  drio-11  ...
+$ ../drio-11/bin64/drrun -c ./bblogger.so -- ls
 ```
 
 The script writes a `bbtrace.log` file that contains the basic block trace.

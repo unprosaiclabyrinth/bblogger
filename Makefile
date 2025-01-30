@@ -5,8 +5,8 @@
 # ALL: Set to enable additional compilation flags (-DVERBOSE -DFULL)
 
 # Change these
-DRIO_INC ?= ../drio-10/include
-DRIO_LIB ?= ../drio-10/lib64
+DRIO_INC ?= ../drio-11/include
+DRIO_LIB ?= ../drio-11/lib64
 
 CC     = gcc
 CFLAGS = -Wall -Wextra -shared -fPIC -DLINUX -DX86_64
