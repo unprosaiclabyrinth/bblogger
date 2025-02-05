@@ -4,21 +4,20 @@
 # CC: The C compiler to use (default: gcc)
 # ALL: Set to enable additional compilation flags (-DVERBOSE -DFULL)
 
-DRIO_INC ?= ../drio-10/include	# Change it
-DRIO_LIB ?= ../drio-10/lib64	# Change it
+# Change these
+DRIO_INC ?= ../drio-11/include
+DRIO_LIB ?= ../drio-11/lib64
 
 CC     = gcc
-CFLAGS = -Wall -Wextra -shared -fPIC
-ifdef ALL
-    CFLAGS += -DVERBOSE -DFULL
+CFLAGS = -Wall -Wextra -shared -fPIC -DLINUX -DX86_64
+ifdef FULL
+    CFLAGS += -DVERBOSE -DALL
 endif
 
 all: bblogger.so
 
 bblogger.so: bblogger.c clean
-	$(CC) $(CFLAGS) -o $@ $< \
-		-I $(DRIO_INC) \
-		-L $(DRIO_LIB) -DLINUX -DX86_64
+	$(CC) $(CFLAGS) -o $@ $< -I $(DRIO_INC) -L $(DRIO_LIB)
 
 clean:
 	@rm -f bblogger.so
