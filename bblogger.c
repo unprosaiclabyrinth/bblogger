@@ -5,6 +5,8 @@
 static file_t log_file;
 static void event_exit(void);
 
+static void trace_bb(app_pc tag); // clean call @ BB entry
+
 // callback function prototype for the basic block event
 static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
@@ -23,37 +25,19 @@ dr_client_main(__attribute__((unused)) client_id_t id,
     dr_register_bb_event(event_app_instruction);
 }
 
+// called at runtime, once per BB execution
+static void trace_bb(app_pc tag) {
+    dr_fprintf(log_file, "%p\n", tag);
+}
+
 static dr_emit_flags_t
-event_app_instruction(__attribute__((unused)) void *drcontext, void *tag,
-                      __attribute__((unused)) instrlist_t *bb,
+event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool for_trace,
                       __attribute__((unused)) bool translating) {
-    app_pc start_pc = dr_fragment_app_pc(tag);
-    module_data_t *mod = dr_lookup_module(start_pc);
-    char addr_str[64];
-    memset(addr_str, 0, 64); // ensure clean buffer
-
-    if (mod != NULL) {
-        ptr_int_t rel_addr = start_pc - mod->start;
-        int from_binary = 0;
-
-        #ifdef ALL
-            from_binary = 1;
-        #else
-            from_binary = mod->names.module_name == NULL;
-        #endif
-
-        if (from_binary) {
-            #ifdef VERBOSE
-                dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", mod->names.file_name, rel_addr);
-            #else
-                dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", rel_addr);
-            #endif
-        }
-
-        dr_write_file(log_file, addr_str, strlen(addr_str));
-    }
-    dr_free_module_data(mod);
+    // insert a clean call at the top of the block
+    dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
+                         (void *)trace_bb, false, 1,
+                         OPND_CREATE_INTPTR((ptr_int_t)dr_fragment_app_pc(tag)));
     return DR_EMIT_DEFAULT;
 }
 
