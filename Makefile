@@ -10,8 +10,17 @@ DRIO_LIB ?= ../drio-11/lib64
 
 CC     = gcc
 CFLAGS = -Wall -Wextra -shared -fPIC -DLINUX -DX86_64
+
 ifdef FULL
     CFLAGS += -DVERBOSE -DALL
+endif
+
+ifdef VERBOSE
+	CFLAGS += -DVERBOSE
+endif
+
+ifdef ALL
+	CFLAGS += -DALL
 endif
 
 all: bblogger.so
