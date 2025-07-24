@@ -38,9 +38,9 @@ The Makefile defines some conditional directives which can be (optionally) used 
    make VERBOSE=1
    ```
 2. **`TEST`:** This filters the log and keeps only those entries pertaining to the target binary executable. All other basic blocks are not logged. Hence, the log it produces is much smaller with addresses from the same module, which is ideal for cross-checking using `objdump` or the like. This can be applied using the command:
-```
-make TEST=1
-``` 
+   ```
+   make TEST=1
+   ```
 
 ## Execution
 
