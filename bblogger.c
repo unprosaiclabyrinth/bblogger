@@ -27,17 +27,25 @@ dr_client_main(__attribute__((unused)) client_id_t id,
 
 // called at runtime, once per BB execution
 static void trace_bb(app_pc tag) {
-    dr_fprintf(log_file, "%p\n", tag);
+    dr_fprintf(log_file, "%#lx\n", tag);
 }
 
 static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool for_trace,
                       __attribute__((unused)) bool translating) {
-    // insert a clean call at the top of the block
-    dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
-                         (void *)trace_bb, false, 1,
-                         OPND_CREATE_INTPTR((ptr_int_t)dr_fragment_app_pc(tag)));
+    app_pc app_pc = dr_fragment_app_pc(tag);
+    module_data_t *mod = dr_lookup_module(app_pc);
+    if (mod != NULL) {
+        ptr_int_t static_pc = (ptr_int_t)(app_pc - mod->start);
+
+        // insert a clean call at the top of the block
+        dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
+                             (void *)trace_bb, false, 1,
+                             OPND_CREATE_INTPTR(static_pc));
+
+        dr_free_module_data(mod);
+    }
     return DR_EMIT_DEFAULT;
 }
 
