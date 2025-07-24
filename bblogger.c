@@ -41,22 +41,14 @@ static void trace_bb(app_pc tag) {
             from_binary = mod->names.module_name == NULL;
         #endif
 
-        // Buffer log according to filtering and verbosity level
-        char addr_str[64];
-        memset(addr_str, 0, sizeof(addr_str));
+        // Log according to filtering and verbosity level
         if (from_binary) {
             #ifdef VERBOSE
-                dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", mod->names.file_name, modrel_pc);
+                dr_fprintf(log_file, "<%s> + %#lx\n", mod->names.file_name, modrel_pc);
             #else
-                dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", modrel_pc);
+                dr_fprintf(log_file, "%#lx\n", modrel_pc);
             #endif
         }
-
-        // Write buffered log to file
-        dr_write_file(log_file, addr_str, strlen(addr_str));
-
-        
-        // dr_fprintf(log_file, "%#lx\n", modrel_pc);
     }
     dr_free_module_data(mod);
 }
