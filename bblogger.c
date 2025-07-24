@@ -27,25 +27,48 @@ dr_client_main(__attribute__((unused)) client_id_t id,
 
 // called at runtime, once per BB execution
 static void trace_bb(app_pc tag) {
-    dr_fprintf(log_file, "%#lx\n", tag);
+    app_pc app_pc = dr_fragment_app_pc(tag);
+    module_data_t *mod = dr_lookup_module(app_pc);
+    if (mod != NULL) {
+        // compute the module-relative PC
+        ptr_int_t modrel_pc = (ptr_int_t)(app_pc - mod->start);
+
+        // determine if the basic block is from a binary or a different module (e.g.: a shared library)
+        int from_binary = 0;
+        #ifdef ALL
+            from_binary = 1;
+        #else
+            from_binary = mod->names.module_name == NULL;
+        #endif
+
+        // Buffer log according to filtering and verbosity level
+        char addr_str[64];
+        memset(addr_str, 0, sizeof(addr_str));
+        if (from_binary) {
+            #ifdef VERBOSE
+                dr_snprintf(addr_str, sizeof(addr_str), "<%s> + %#lx\n", mod->names.file_name, modrel_pc);
+            #else
+                dr_snprintf(addr_str, sizeof(addr_str), "%#lx\n", modrel_pc);
+            #endif
+        }
+
+        // Write buffered log to file
+        dr_write_file(log_file, addr_str, strlen(addr_str));
+
+        
+        // dr_fprintf(log_file, "%#lx\n", modrel_pc);
+    }
+    dr_free_module_data(mod);
 }
 
 static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool for_trace,
                       __attribute__((unused)) bool translating) {
-    app_pc app_pc = dr_fragment_app_pc(tag);
-    module_data_t *mod = dr_lookup_module(app_pc);
-    if (mod != NULL) {
-        ptr_int_t static_pc = (ptr_int_t)(app_pc - mod->start);
-
-        // insert a clean call at the top of the block
-        dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
-                             (void *)trace_bb, false, 1,
-                             OPND_CREATE_INTPTR(static_pc));
-
-        dr_free_module_data(mod);
-    }
+    // insert a clean call at the top of the block
+    dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
+                            (void *)trace_bb, false, 1,
+                            OPND_CREATE_INTPTR(tag));
     return DR_EMIT_DEFAULT;
 }
 
