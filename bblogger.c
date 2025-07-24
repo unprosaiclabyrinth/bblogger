@@ -35,10 +35,10 @@ static void trace_bb(app_pc tag) {
 
         // determine if the basic block is from a binary or a different module (e.g.: a shared library)
         int from_binary = 0;
-        #ifdef ALL
-            from_binary = 1;
-        #else
+        #ifdef TEST
             from_binary = mod->names.module_name == NULL;
+        #else
+            from_binary = 1;
         #endif
 
         // Log according to filtering and verbosity level
