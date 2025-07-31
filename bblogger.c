@@ -1,11 +1,12 @@
 #include <dr_api.h>
 #include <dr_modules.h>
+#include "dr_ir_disassemble.h"
 #include <string.h>
 
 static file_t log_file;
 static void event_exit(void);
 
-static void trace_bb(app_pc tag); // clean call @ BB entry
+static void trace_bb(void *drcontext, instrlist_t *bb, app_pc tag); // clean call @ BB entry
 
 // callback function prototype for the basic block event
 static dr_emit_flags_t
@@ -26,29 +27,34 @@ dr_client_main(__attribute__((unused)) client_id_t id,
 }
 
 // called at runtime, once per BB execution
-static void trace_bb(app_pc tag) {
+static void trace_bb(void *drcontext, instrlist_t *bb, app_pc tag) {
     app_pc app_pc = dr_fragment_app_pc(tag);
     module_data_t *mod = dr_lookup_module(app_pc);
     if (mod != NULL) {
         // compute the module-relative PC
         ptr_int_t modrel_pc = (ptr_int_t)(app_pc - mod->start);
+        char *modulestr = mod->names.module_name ? mod->names.module_name : mod->names.file_name;
 
-        // determine if the basic block is from a binary or a different module (e.g.: a shared library)
-        int from_binary = 0;
-        #ifdef TEST
-            from_binary = mod->names.module_name == NULL;
+        // Log according to verbosity level
+        #ifdef VVERBOSE
+            dr_fprintf(log_file, "=== BB @ <%s> + %#lx ===\n", modulestr, modrel_pc);
+            for (instr_t *insn = instrlist_first(bb); insn; insn = instr_get_next(insn)) {
+                // Disassemble the instruction into a buffer
+                char disas[256];
+                __attribute__((unused))
+                int len = instr_disassemble_to_buffer(drcontext, insn, disas, sizeof(disas));
+                // Write the disassembled instruction to the log file
+                dr_fprintf(log_file, "%s\n", disas);
+            }
+            // Write additional newline after BB
+            dr_fprintf(log_file, "\n");
         #else
-            from_binary = 1;
-        #endif
-
-        // Log according to filtering and verbosity level
-        if (from_binary) {
             #ifdef VERBOSE
-                dr_fprintf(log_file, "<%s> + %#lx\n", mod->names.file_name, modrel_pc);
+                dr_fprintf(log_file, "%s + %#lx\n", modulestr, modrel_pc);
             #else
                 dr_fprintf(log_file, "%#lx\n", modrel_pc);
             #endif
-        }
+        #endif
     }
     dr_free_module_data(mod);
 }
@@ -59,8 +65,9 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool translating) {
     // insert a clean call at the top of the block
     dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
-                            (void *)trace_bb, false, 1,
-                            OPND_CREATE_INTPTR(tag));
+                         (void *)trace_bb, false, 2,
+                         OPND_CREATE_INTPTR((ptr_int_t)bb),
+                         OPND_CREATE_INTPTR(tag));
     return DR_EMIT_DEFAULT;
 }
 

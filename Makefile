@@ -15,8 +15,8 @@ ifdef VERBOSE
 	CFLAGS += -DVERBOSE
 endif
 
-ifdef TEST
-	CFLAGS += -DTEST
+ifdef VVERBOSE
+	CFLAGS += -DVVERBOSE
 endif
 
 all: bblogger.so
