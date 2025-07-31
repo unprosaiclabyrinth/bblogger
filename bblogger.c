@@ -37,7 +37,7 @@ static void trace_bb(char *bb, app_pc tag) {
 
         // Log according to verbosity level
         #ifdef VVERBOSE
-            dr_fprintf(log_file, "=== BB @ <%s> + %#lx ===\n%s", modulestr, modrel_pc, bb);
+            dr_fprintf(log_file, "=== BB @ <%s> + %#lx ===\n%s\n", modulestr, modrel_pc, bb);
             dr_global_free(bb, strlen(bb) + 1); 
         #else
             #ifdef VERBOSE
@@ -57,19 +57,19 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     char *heap_buf = NULL;
     #ifdef VVERBOSE
         // Disassemble the basic block into a local buffer
-        char local[4096];
+        char local[4096] = {0};
         char *p = local;
         int rem = sizeof(local);
-        for (instr_t *insn = instrlist_first(bb); insn; insn = instr_get_next(insn)) {
+        for (instr_t *insn = instrlist_first_app(bb); insn; insn = instr_get_next_app(insn)) {
             char disas[256];
             instr_disassemble_to_buffer(drcontext, insn, disas, sizeof(disas));
             int n = snprintf(p, rem, "%s\n", disas);
             p += n;
             rem -= n;
         }
-        snprintf(p++, rem--, "\n");
 
         // Copy the local buffer into the DR heap for it to survive until the clean call
+        *p = '\0'; // null-terminate the string
         size_t total_len = (p - local) + 1;
         heap_buf = dr_global_alloc(total_len);
         memcpy(heap_buf, local, total_len);
@@ -78,7 +78,7 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     // insert a clean call at the top of the block
     dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
                          (void *)trace_bb, false, 2,
-                         OPND_CREATE_INTPTR(heap_buf),
+                         OPND_CREATE_INTPTR((ptr_int_t)heap_buf),
                          OPND_CREATE_INTPTR(tag));
     return DR_EMIT_DEFAULT;
 }
