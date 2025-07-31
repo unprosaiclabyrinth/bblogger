@@ -6,7 +6,7 @@
 static file_t log_file;
 static void event_exit(void);
 
-static void trace_bb(void *drcontext, instrlist_t *bb, app_pc tag); // clean call @ BB entry
+static void trace_bb(char *bb, app_pc tag); // clean call @ BB entry
 
 // callback function prototype for the basic block event
 static dr_emit_flags_t
@@ -27,7 +27,7 @@ dr_client_main(__attribute__((unused)) client_id_t id,
 }
 
 // called at runtime, once per BB execution
-static void trace_bb(void *drcontext, instrlist_t *bb, app_pc tag) {
+static void trace_bb(char *bb, app_pc tag) {
     app_pc app_pc = dr_fragment_app_pc(tag);
     module_data_t *mod = dr_lookup_module(app_pc);
     if (mod != NULL) {
@@ -37,20 +37,11 @@ static void trace_bb(void *drcontext, instrlist_t *bb, app_pc tag) {
 
         // Log according to verbosity level
         #ifdef VVERBOSE
-            dr_fprintf(log_file, "=== BB @ <%s> + %#lx ===\n", modulestr, modrel_pc);
-            for (instr_t *insn = instrlist_first(bb); insn; insn = instr_get_next(insn)) {
-                // Disassemble the instruction into a buffer
-                char disas[256];
-                __attribute__((unused))
-                int len = instr_disassemble_to_buffer(drcontext, insn, disas, sizeof(disas));
-                // Write the disassembled instruction to the log file
-                dr_fprintf(log_file, "%s\n", disas);
-            }
-            // Write additional newline after BB
-            dr_fprintf(log_file, "\n");
+            dr_fprintf(log_file, "=== BB @ <%s> + %#lx ===\n%s", modulestr, modrel_pc, bb);
+            dr_global_free(bb, strlen(bb) + 1); 
         #else
             #ifdef VERBOSE
-                dr_fprintf(log_file, "%s + %#lx\n", modulestr, modrel_pc);
+                dr_fprintf(log_file, "<%s> + %#lx\n", modulestr, modrel_pc);
             #else
                 dr_fprintf(log_file, "%#lx\n", modrel_pc);
             #endif
@@ -63,10 +54,31 @@ static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool for_trace,
                       __attribute__((unused)) bool translating) {
+    char *heap_buf = NULL;
+    #ifdef VVERBOSE
+        // Disassemble the basic block into a local buffer
+        char local[4096];
+        char *p = local;
+        int rem = sizeof(local);
+        for (instr_t *insn = instrlist_first(bb); insn; insn = instr_get_next(insn)) {
+            char disas[256];
+            instr_disassemble_to_buffer(drcontext, insn, disas, sizeof(disas));
+            int n = snprintf(p, rem, "%s\n", disas);
+            p += n;
+            rem -= n;
+        }
+        snprintf(p++, rem--, "\n");
+
+        // Copy the local buffer into the DR heap for it to survive until the clean call
+        size_t total_len = (p - local) + 1;
+        heap_buf = dr_global_alloc(total_len);
+        memcpy(heap_buf, local, total_len);
+    #endif
+
     // insert a clean call at the top of the block
     dr_insert_clean_call(drcontext, bb, instrlist_first(bb),
                          (void *)trace_bb, false, 2,
-                         OPND_CREATE_INTPTR((ptr_int_t)bb),
+                         OPND_CREATE_INTPTR(heap_buf),
                          OPND_CREATE_INTPTR(tag));
     return DR_EMIT_DEFAULT;
 }
