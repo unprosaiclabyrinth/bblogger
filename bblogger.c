@@ -13,44 +13,61 @@ static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       bool for_trace, bool translating);
 
+/* Cache implementation */
 #ifdef VVERBOSE
+#define BB_CACHE_TABLE_BITS 10
+#define BB_CACHE_TABLE_SIZE (1u << BB_CACHE_TABLE_BITS)
+
 typedef struct bb_data_t {
     app_pc tag;
     char *bbstr;
     struct bb_data_t *next;
 } bb_data_t;
 
-/* the linked list cache */
-static bb_data_t *bb_cache = NULL;
+/* the bucket array of the hash table cache */
+static bb_data_t **bb_cache_table = NULL;
 
-void cache_bb_string(app_pc tag, char *bbstr) {
-    bb_data_t *e = dr_global_alloc(sizeof(*e));
-    e->tag  = tag;
-    e->bbstr  = bbstr;
-    e->next = bb_cache;
-    bb_cache = e;
+// simple mix: shift away low bits and mask
+static inline uint hash(app_pc tag) {
+    return (((ptr_int_t)tag) >> 4) & (BB_CACHE_TABLE_SIZE - 1);
 }
 
-char *lookup_bb_string(app_pc tag) {
-    for (bb_data_t *e = bb_cache; e; e = e->next) {
+static void init_bb_cache_table(void) {
+    // allocate and zero the bucket array
+    bb_cache_table = dr_global_alloc(BB_CACHE_TABLE_SIZE * sizeof(*bb_cache_table));
+    memset(bb_cache_table, 0, BB_CACHE_TABLE_SIZE * sizeof(*bb_cache_table));
+}
+
+static void cache_bb_string(app_pc tag, char *bbstr) {
+    uint idx = hash(tag);
+    bb_data_t *e = dr_global_alloc(sizeof(*e));
+    e->tag = tag;
+    e->bbstr = bbstr;
+    e->next = bb_cache_table[idx];
+    bb_cache_table[idx] = e;
+}
+
+static char *lookup_bb_string(app_pc tag) {
+    uint idx = hash(tag);
+    for (bb_data_t *e = bb_cache_table[idx]; e; e = e->next) {
         if (e->tag == tag)
             return e->bbstr;
     }
     return NULL;
 }
 
-void free_bb_cache(void)
-{
-    bb_data_t *e = bb_cache;
-    while (e != NULL) {
-        bb_data_t *next = e->next;
-        // free the disassembly string
-        dr_global_free(e->bbstr, strlen(e->bbstr) + 1);
-        // free the node itself
-        dr_global_free(e, sizeof(*e));
-        e = next;
+static void free_bb_cache(void) {
+    for (uint i = 0; i < BB_CACHE_TABLE_SIZE; i++) {
+        bb_data_t *e = bb_cache_table[i];
+        while (e) {
+            bb_data_t *next = e->next;
+            dr_global_free(e->bbstr, strlen(e->bbstr) + 1);
+            dr_global_free(e, sizeof(*e));
+            e = next;
+        }
     }
-    bb_cache = NULL;
+    dr_global_free(bb_cache_table, BB_CACHE_TABLE_SIZE * sizeof(*bb_cache_table));
+    bb_cache_table = NULL;
 }
 #endif /* VVERBOSE */
 
@@ -97,7 +114,7 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
             rem -= n;
         }
 
-        // Copy the local buffer into the DR heap for it to survive until the clean call
+        // Cache the local buffer into the DR heap for it to survive until the end
         *p = '\0'; // null-terminate the string
         size_t total_len = (p - local) + 1;
         char *heap_buf = dr_global_alloc(total_len);
@@ -131,4 +148,8 @@ dr_client_main(__attribute__((unused)) client_id_t id,
 
     dr_register_exit_event(event_exit);
     dr_register_bb_event(event_app_instruction);
+
+    #ifdef VVERBOSE
+        init_bb_cache_table();
+    #endif
 }
