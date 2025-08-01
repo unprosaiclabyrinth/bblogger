@@ -143,7 +143,16 @@ dr_client_main(__attribute__((unused)) client_id_t id,
                __attribute__((unused)) const char *argv[]) {
     dr_set_client_name("DrBblogger", "https://dynamorio.org");
 
-    log_file = dr_open_file("bbtrace.log", DR_FILE_WRITE_OVERWRITE | DR_FILE_ALLOW_LARGE);
+    const char *log_filename = "bbtrace.log";  /* default */
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0 && i+1 < argc) {
+            log_filename = argv[++i];
+        } else {
+            dr_printf("DrBblogger: unknown option '%s'\n", argv[i]);
+        }
+    }
+
+    log_file = dr_open_file(log_filename, DR_FILE_WRITE_OVERWRITE | DR_FILE_ALLOW_LARGE);
     DR_ASSERT(log_file != INVALID_FILE);
 
     dr_register_exit_event(event_exit);
