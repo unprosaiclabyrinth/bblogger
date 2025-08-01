@@ -32,7 +32,7 @@ static inline uint hash(app_pc tag) {
     return (((ptr_int_t)tag) >> 4) & (BB_CACHE_TABLE_SIZE - 1);
 }
 
-static void init_bb_cache_table(void) {
+static void init_bb_cache(void) {
     // allocate and zero the bucket array
     bb_cache_table = dr_global_alloc(BB_CACHE_TABLE_SIZE * sizeof(*bb_cache_table));
     memset(bb_cache_table, 0, BB_CACHE_TABLE_SIZE * sizeof(*bb_cache_table));
@@ -150,6 +150,6 @@ dr_client_main(__attribute__((unused)) client_id_t id,
     dr_register_bb_event(event_app_instruction);
 
     #ifdef VVERBOSE
-        init_bb_cache_table();
+        init_bb_cache();
     #endif
 }
