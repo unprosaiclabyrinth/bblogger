@@ -93,8 +93,8 @@ static void trace_bb(app_pc tag) {
                 dr_fprintf(log_file, "%#lx\n", modrel_pc);
             #endif
         #endif
+        dr_free_module_data(mod);
     }
-    dr_free_module_data(mod);
 }
 
 static dr_emit_flags_t
