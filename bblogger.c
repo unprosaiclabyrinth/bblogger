@@ -9,9 +9,6 @@ static file_t log_file;
 static void event_exit(void);
 static void trace_bb(app_pc app_pc);
 
-/* ============================================================
- *               Optional Basic Block Cache (VVERBOSE)
- * ============================================================ */
 #ifdef VVERBOSE
 #define DISAS_BUFSZ 1024
 #define BB_CACHE_TABLE_BITS 10
@@ -77,13 +74,8 @@ static void free_bb_cache(void) {
 }
 #endif /* VVERBOSE */
 
-/* ============================================================
- *                Clean Call: Per-BB Execution
- * ============================================================ */
 static void trace_bb(app_pc app_pc) {
     module_data_t *mod = dr_lookup_module(app_pc);
-    thread_id_t tid = dr_get_thread_id(dr_get_current_drcontext());
-    uint64 time_us = dr_get_microseconds();
 
     if (mod) {
         ptr_int_t modrel_pc = (ptr_int_t)(app_pc - mod->start);
@@ -96,34 +88,30 @@ static void trace_bb(app_pc app_pc) {
         char *bb = lookup_bb_string(app_pc);
         if (bb) {
             dr_fprintf(log_file,
-                "\n[time=%" PRIu64 "us thread=%u] === BB @ <%s> + %#lx ===\n%s",
-                time_us, tid, modulestr, modrel_pc, bb);
+                "\n=== BB @ <%s> + %#lx ===\n%s",
+                modulestr, modrel_pc, bb);
         }
 #else
     #ifdef VERBOSE
         dr_fprintf(log_file,
-            "\n[time=%" PRIu64 "us thread=%u] <%s> + %#lx\n",
-            time_us, tid, modulestr, modrel_pc);
+            "\n<%s> + %#lx\n",
+            modulestr, modrel_pc);
     #else
         dr_fprintf(log_file,
-            "\n[time=%" PRIu64 "us thread=%u] %#lx\n",
-            time_us, tid, modrel_pc);
+            "\n%#lx\n",
+            modrel_pc);
     #endif
 #endif
         dr_free_module_data(mod);
     } else {
         dr_fprintf(log_file,
-            "\n[time=%" PRIu64 "us thread=%u] <no module> @ %p\n",
-            time_us, tid, app_pc);
+            "\n<no module> @ %p\n",
+	    app_pc);
     }
 
-    /* 🔄 Flush log buffer so tail -f sees updates immediately */
     dr_flush_file(log_file);
 }
 
-/* ============================================================
- *          Instrumentation: Per Unique Basic Block
- * ============================================================ */
 static dr_emit_flags_t
 event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
                       __attribute__((unused)) bool for_trace,
@@ -132,7 +120,6 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     app_pc start_pc = dr_fragment_app_pc(tag);
 
 #ifdef VVERBOSE
-    /* Dynamically disassemble a basic block with no truncation */
     size_t bb_sz = 0;
     size_t bb_cap = 4096;
     char *bb_buf = dr_global_alloc(bb_cap);
@@ -143,7 +130,6 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
         insn = instr_get_next_app(insn)) {
 
         char disas[DISAS_BUFSZ];
-        /* Render textual disassembly into a sufficiently large stack buffer */
         instr_disassemble_to_buffer(drcontext, insn, disas, sizeof(disas));
 
         size_t need = strlen(disas) + 2; // '\n' + '\0'
@@ -167,13 +153,12 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
             dr_global_free(bb_buf, old_cap);
             bb_buf = newb;
             w = dr_snprintf(bb_buf + bb_sz, bb_cap - bb_sz, "%s\n", disas);
-            if (w < 0) w = 0; /* ultra defensive */
+            if (w < 0) w = 0;
         }
         bb_sz += (size_t)w;
         bb_buf[bb_sz] = '\0';
     }
 
-    /* --- Manual completion when DR stopped early --- */
     instr_t *last = instrlist_last_app(bb);
     bool incomplete = (last != NULL) && !instr_is_cti(last);
 
@@ -183,9 +168,8 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
 
         for (;;) {
             instr_init(drcontext, &dec);
-            /* If decode() is flaky here, try decode_from_copy(drcontext, pc, &dec, true) */
             if (!decode(drcontext, pc, &dec))
-                break;  /* unmapped/invalid => stop extension */
+                break;
 
             char disas[DISAS_BUFSZ];
             instr_disassemble_to_buffer(drcontext, &dec, disas, sizeof(disas));
@@ -223,7 +207,6 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
         }
     }
 
-    /* Ensure newline at end (even for empty BBs) */
     if (bb_sz == 0 || bb_buf[bb_sz - 1] != '\n') {
         if (bb_sz + 2 >= bb_cap) {
             size_t old_cap = bb_cap;
@@ -249,9 +232,6 @@ event_app_instruction(void *drcontext, void *tag, instrlist_t *bb,
     return DR_EMIT_DEFAULT;
 }
 
-/* ============================================================
- *                        Cleanup
- * ============================================================ */
 static void event_exit(void) {
     dr_close_file(log_file);
 #ifdef VVERBOSE
@@ -259,9 +239,6 @@ static void event_exit(void) {
 #endif
 }
 
-/* ============================================================
- *                        Entry Point
- * ============================================================ */
 DR_EXPORT void
 dr_client_main(__attribute__((unused)) client_id_t id, int argc, const char *argv[]) {
     dr_set_client_name("DrBblogger", "https://dynamorio.org");
