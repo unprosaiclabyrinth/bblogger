@@ -1,12 +1,11 @@
 # Configurable variables (can be overridden from the command line or in config.mk)
-# DRIO_INC: Directory for DRIO include files (default: ../drio-10/include)
-# DRIO_LIB: Directory for DRIO library files (default: ../drio-10/lib64)
+# DRIO_INC: Directory for DRIO include files (default: ./.vendor/drio-11/include)
+# DRIO_LIB: Directory for DRIO library files (default: ./.vendor/drio-11/lib64)
 # CC: The C compiler to use (default: gcc)
-# ALL: Set to enable additional compilation flags (-DVERBOSE -DFULL)
 
 # Change these
-DRIO_INC ?= ../drio-11/include
-DRIO_LIB ?= ../drio-11/lib64
+DRIO_INC ?= ./.vendor/drio-11/include
+DRIO_LIB ?= ./.vendor/drio-11/lib64
 
 CC     = gcc
 CFLAGS = -Wall -Wextra -shared -fPIC -DLINUX -DX86_64
@@ -39,9 +38,8 @@ help:
 	@echo "  help      Display this help message"
 	@echo ""
 	@echo "Configurable variables:"
-	@echo "  DRIO_INC  Directory for DRIO include files (default: ../drio-10/include)"
-	@echo "  DRIO_LIB  Directory for DRIO library files (default: ../drio-10/lib64)"
+	@echo "  DRIO_INC  Directory for DRIO include files (default: ./.vendor/drio-11/include)"
+	@echo "  DRIO_LIB  Directory for DRIO library files (default: ./.vendor/drio-11/lib64)"
 	@echo "  CC        C compiler (default: gcc)"
-	@echo "  ALL       Set to enable additional compilation flags (-DVERBOSE -DFULL)"
 
 .PHONY: all clean help
