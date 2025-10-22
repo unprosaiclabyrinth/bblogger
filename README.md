@@ -1,4 +1,4 @@
-Bblogger is a DynamoRIO client tool that logs the basic block trace of the execution of the application program run under it.
+Bblogger is a DynamoRIO client tool that logs the dynamic basic block trace of the execution of the application program run under it.
 
 # Getting Started
 
@@ -13,12 +13,12 @@ Build bblogger:
 ```
 make VVERBOSE=1
 ```
-Log the basic block trace of the execution of an application using bblogger:
+Log the dynamic basic block trace of the execution of an application using bblogger:
 ```
 ./.vendor/drio-11/bin64/drrun -c bblogger.so -- ./application
 ```
 
-By default, bblogger writes the basic block trace of the execution to a file called `bbtrace.log`. A custom output file path may be specified using the `-o` flag:
+By default, bblogger writes the dynamic basic block trace of the execution to a file called `bbtrace.log`. A custom output file path may be specified using the `-o` flag:
 ```
 ./.vendor/drio-11/bin/bin64/drrun -c bblogger.so -o /path/to/log -- ./application
 ```
