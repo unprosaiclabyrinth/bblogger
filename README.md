@@ -7,7 +7,7 @@ Clone this repo and `cd` into the fresh clone. Run these commands to set up the 
 mkdir .vendor
 wget -P ./.vendor https://github.com/DynamoRIO/dynamorio/releases/download/cronbuild-11.90.20316/DynamoRIO-Linux-11.90.20316.tar.gz
 tar -xzf ./.vendor/DynamoRIO-Linux-11.90.20316.tar.gz -C ./.vendor
-mv ./.vendor/DynamoRIO-Linux-11.90.20316 ./vendor/drio-11
+mv ./.vendor/DynamoRIO-Linux-11.90.20316 ./.vendor/drio-11
 ```
 Build bblogger:
 ```
